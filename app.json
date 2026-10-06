@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "TutoriasFacultad-Movil",
+    "name": "Tutorías FISEI",
     "slug": "TutoriasFacultad-Movil",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -19,6 +19,18 @@
     },
     "web": {
       "favicon": "./assets/favicon.png"
-    }
+    },
+    "plugins": [
+      "expo-secure-store",
+      "expo-router",
+      [
+        "expo-camera",
+        {
+          "barcodeScannerEnabled": true,
+          "cameraPermission": "La cámara se usa para escanear el código QR de asistencia a las tutorías."
+        }
+      ]
+    ],
+    "scheme": "tutoriasfacultad"
   }
 }
