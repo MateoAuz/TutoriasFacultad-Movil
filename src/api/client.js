@@ -3,6 +3,9 @@ import axios from 'axios';
 // En el celular "localhost" no apunta a la PC: define EXPO_PUBLIC_API_URL en .env (ver .env.example).
 export const API_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:3000/api';
 
+// Los archivos subidos se sirven desde la raíz del backend (/uploads/...), sin el sufijo /api.
+export const ORIGEN_ARCHIVOS = API_URL.replace(/\/api\/?$/, '');
+
 const api = axios.create({ baseURL: API_URL, timeout: 15000 });
 
 // El token vive en memoria para no leer el almacenamiento seguro en cada petición;

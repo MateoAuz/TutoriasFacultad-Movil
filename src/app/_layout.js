@@ -19,6 +19,16 @@ function Navegacion() {
     <Stack screenOptions={{ headerShown: false }}>
       <Stack.Protected guard={!!usuario}>
         <Stack.Screen name="(tabs)" />
+        <Stack.Screen
+          name="tutoria/[id]"
+          options={{
+            headerShown: true,
+            title: 'Tutoría',
+            headerBackTitle: 'Atrás',
+            headerStyle: { backgroundColor: colores.azul },
+            headerTintColor: colores.blanco,
+          }}
+        />
       </Stack.Protected>
       <Stack.Protected guard={!usuario}>
         <Stack.Screen name="login" />
