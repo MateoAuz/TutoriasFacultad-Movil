@@ -51,3 +51,14 @@ export function formatearTamano(bytes) {
   if (bytes < 1024 * 1024) return `${Math.round(bytes / 1024)} KB`;
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
+
+// "Ahora", "Hace 5 min", "Hace 3 h", "Hace 2 d" a partir de un instante real (ISO con zona).
+export function tiempoRelativo(fechaISO) {
+  const segundos = Math.max(0, Math.floor((Date.now() - new Date(fechaISO).getTime()) / 1000));
+  if (segundos < 60) return 'Ahora';
+  const minutos = Math.floor(segundos / 60);
+  if (minutos < 60) return `Hace ${minutos} min`;
+  const horas = Math.floor(minutos / 60);
+  if (horas < 24) return `Hace ${horas} h`;
+  return `Hace ${Math.floor(horas / 24)} d`;
+}

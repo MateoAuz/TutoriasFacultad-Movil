@@ -1,7 +1,10 @@
 import { Tabs } from 'expo-router';
+import { NotificacionesProvider, useNotificaciones } from '../../context/NotificacionesContext';
 import { colores } from '../../lib/tema';
 
-export default function TabsLayout() {
+function Pestanas() {
+  const { noLeidas } = useNotificaciones();
+
   return (
     <Tabs
       screenOptions={{
@@ -13,8 +16,19 @@ export default function TabsLayout() {
       <Tabs.Screen name="index" options={{ title: 'Tutorías' }} />
       <Tabs.Screen name="escanear" options={{ title: 'Escanear' }} />
       <Tabs.Screen name="historial" options={{ title: 'Historial' }} />
-      <Tabs.Screen name="notificaciones" options={{ title: 'Avisos' }} />
+      <Tabs.Screen
+        name="notificaciones"
+        options={{ title: 'Avisos', tabBarBadge: noLeidas > 0 ? (noLeidas > 99 ? '99+' : noLeidas) : undefined }}
+      />
       <Tabs.Screen name="perfil" options={{ title: 'Perfil' }} />
     </Tabs>
+  );
+}
+
+export default function TabsLayout() {
+  return (
+    <NotificacionesProvider>
+      <Pestanas />
+    </NotificacionesProvider>
   );
 }
