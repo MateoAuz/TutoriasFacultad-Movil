@@ -29,6 +29,16 @@ function Navegacion() {
             headerTintColor: colores.blanco,
           }}
         />
+        <Stack.Screen
+          name="solicitar"
+          options={{
+            headerShown: true,
+            title: 'Solicitar tutoría',
+            headerBackTitle: 'Atrás',
+            headerStyle: { backgroundColor: colores.azul },
+            headerTintColor: colores.blanco,
+          }}
+        />
       </Stack.Protected>
       <Stack.Protected guard={!usuario}>
         <Stack.Screen name="login" />

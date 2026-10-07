@@ -15,6 +15,7 @@ function Pestanas() {
     >
       <Tabs.Screen name="index" options={{ title: 'Tutorías' }} />
       <Tabs.Screen name="escanear" options={{ title: 'Escanear' }} />
+      <Tabs.Screen name="espacios" options={{ title: 'Espacios' }} />
       <Tabs.Screen name="historial" options={{ title: 'Historial' }} />
       <Tabs.Screen
         name="notificaciones"

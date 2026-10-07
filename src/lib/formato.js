@@ -75,3 +75,30 @@ export function horaLocal(valorISO) {
   const d = new Date(valorISO);
   return `${pad(d.getHours())}:${pad(d.getMinutes())}`;
 }
+
+const DIAS_CORTOS = ['dom', 'lun', 'mar', 'mié', 'jue', 'vie', 'sáb'];
+
+// Próximos días hábiles (lunes a viernes) desde hoy, en hora local: [{ iso, dia, numero }].
+export function diasHabiles(cantidad = 10) {
+  const dias = [];
+  const d = new Date();
+  while (dias.length < cantidad) {
+    const semana = d.getDay();
+    if (semana !== 0 && semana !== 6) {
+      dias.push({ iso: `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`, dia: DIAS_CORTOS[semana], numero: d.getDate() });
+    }
+    d.setDate(d.getDate() + 1);
+  }
+  return dias;
+}
+
+export function horaAMinutos(hhmm) {
+  return aMinutos(hhmm);
+}
+
+export function minutosAHora(minutos) {
+  return `${pad(Math.floor(minutos / 60))}:${pad(minutos % 60)}`;
+}
+
+export const ETIQUETA_TIPO = { AULA: 'Aula', LABORATORIO: 'Laboratorio' };
+export const ETIQUETA_BLOQUE = { BLOQUE_1: 'Bloque 1', BLOQUE_2: 'Bloque 2' };
