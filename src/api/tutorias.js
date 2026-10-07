@@ -40,7 +40,7 @@ export const tutoriasApi = {
   // GET /api/asistencias/mias: tutorías a las que ya registré asistencia.
   asistidas: () =>
     api.get('/asistencias/mias').then((r) =>
-      r.data.map((a) => ({ ...desdeReserva(a.reserva), hora_registro: a.hora_registro }))
+      r.data.map((a) => ({ ...desdeReserva(a.reserva), hora_registro: a.hora_registro, validado_qr: a.validado_qr }))
     ),
 
   // GET /api/documentos/reserva/:id. Responde 403 si el estudiante no registró asistencia.

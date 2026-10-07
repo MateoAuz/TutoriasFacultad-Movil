@@ -1,6 +1,7 @@
 // Las fechas y horas del backend son "naive": columnas Date/Time de Postgres leídas en UTC,
 // por eso se formatean con getUTC* y nunca con la zona horaria del celular.
 const MESES = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
+const MESES_LARGOS = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
 const DIAS = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'];
 
 const pad = (n) => String(n).padStart(2, '0');
@@ -61,4 +62,16 @@ export function tiempoRelativo(fechaISO) {
   const horas = Math.floor(minutos / 60);
   if (horas < 24) return `Hace ${horas} h`;
   return `Hace ${Math.floor(horas / 24)} d`;
+}
+
+// "2026-10-06" -> "octubre 2026"
+export function mesYAnio(fechaISO) {
+  const [y, m] = fechaISO.split('-').map(Number);
+  return `${MESES_LARGOS[m - 1]} ${y}`;
+}
+
+// Instante real (ISO con zona) -> "HH:MM" en la hora local del celular.
+export function horaLocal(valorISO) {
+  const d = new Date(valorISO);
+  return `${pad(d.getHours())}:${pad(d.getMinutes())}`;
 }
