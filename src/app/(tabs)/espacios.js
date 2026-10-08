@@ -2,21 +2,22 @@ import { useCallback, useMemo, useState } from 'react';
 import { FlatList, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { router } from 'expo-router';
 import EstadoCarga from '../../components/EstadoCarga';
+import SelectorFranja from '../../components/SelectorFranja';
 import { espaciosApi } from '../../api/espacios';
 import { useRecurso } from '../../hooks/useRecurso';
-import { ETIQUETA_BLOQUE, ETIQUETA_TIPO, diasHabiles, formatearFecha, horaAMinutos, minutosAHora } from '../../lib/formato';
+import { ETIQUETA_BLOQUE, ETIQUETA_TIPO, diasHabiles, fechaDeHoy, formatearFecha, minutosAHora } from '../../lib/formato';
 import { colores } from '../../lib/tema';
 
-const FIN_JORNADA = 20 * 60;
-// 07:00 a 19:30 cada 30 minutos
-const HORAS_INICIO = Array.from({ length: 25 }, (_, i) => 7 * 60 + i * 30)
-  .filter((m) => m < FIN_JORNADA)
-  .map(minutosAHora);
-const DURACIONES = [
-  { minutos: 60, etiqueta: '1 h' },
-  { minutos: 90, etiqueta: '1 h 30' },
-  { minutos: 120, etiqueta: '2 h' },
-];
+// Franja sugerida al abrir el selector: si miras hoy, desde la próxima media hora; si no, 09:00 – 10:00.
+function franjaSugerida(fecha) {
+  let inicio = 9 * 60;
+  if (fecha === fechaDeHoy()) {
+    const ahora = new Date();
+    inicio = Math.min(Math.max(Math.ceil((ahora.getHours() * 60 + ahora.getMinutes()) / 30) * 30, 7 * 60), 19 * 60);
+  }
+  return { ini: minutosAHora(inicio), fin: minutosAHora(inicio + 60) };
+}
+
 const TIPOS = [
   { clave: null, etiqueta: 'Todos' },
   { clave: 'LABORATORIO', etiqueta: 'Laboratorios' },
@@ -26,18 +27,15 @@ const TIPOS = [
 export default function Espacios() {
   const dias = useMemo(() => diasHabiles(10), []);
   const [fecha, setFecha] = useState(dias[0].iso);
-  const [horaIni, setHoraIni] = useState(null); // null = agenda de todo el día
-  const [duracion, setDuracion] = useState(60);
+  const [franja, setFranja] = useState(null); // null = agenda de todo el día; { ini, fin } = franja libre
+  const [selectorAbierto, setSelectorAbierto] = useState(false);
   const [tipo, setTipo] = useState(null);
 
-  const horaFin = horaIni ? minutosAHora(horaAMinutos(horaIni) + duracion) : null;
-  const franjaValida = !horaIni || horaAMinutos(horaFin) <= FIN_JORNADA;
-  const conFranja = Boolean(horaIni) && franjaValida;
+  const horaIni = franja?.ini ?? null;
+  const horaFin = franja?.fin ?? null;
+  const conFranja = Boolean(franja);
 
-  const cargar = useCallback(
-    () => espaciosApi.disponibilidad(fecha, conFranja ? horaIni : null, conFranja ? horaFin : null),
-    [fecha, horaIni, horaFin, conFranja]
-  );
+  const cargar = useCallback(() => espaciosApi.disponibilidad(fecha, horaIni, horaFin), [fecha, horaIni, horaFin]);
   const { data, cargando, refrescando, mensajeError, refrescar } = useRecurso(cargar, 'No se pudo consultar la disponibilidad.');
 
   const espacios = useMemo(() => {
@@ -59,35 +57,36 @@ export default function Espacios() {
       <View style={styles.filtros}>
         <Fila titulo="Día">
           {dias.map((d) => (
-            <Chip key={d.iso} activo={fecha === d.iso} onPress={() => setFecha(d.iso)} etiqueta={`${d.dia} ${d.numero}`} />
+            <Chip key={d.iso} activo={fecha === d.iso} onPress={() => setFecha(d.iso)} etiqueta={`${d.iso === fechaDeHoy() ? 'Hoy' : d.dia} ${d.numero}`} />
           ))}
         </Fila>
-        <Fila titulo="Hora de inicio">
-          <Chip activo={!horaIni} onPress={() => setHoraIni(null)} etiqueta="Todo el día" />
-          {HORAS_INICIO.map((h) => (
-            <Chip key={h} activo={horaIni === h} onPress={() => setHoraIni(h)} etiqueta={h} />
-          ))}
-        </Fila>
-        {horaIni ? (
-          <Fila titulo="Duración">
-            {DURACIONES.map((d) => (
-              <Chip key={d.minutos} activo={duracion === d.minutos} onPress={() => setDuracion(d.minutos)} etiqueta={d.etiqueta} />
-            ))}
-          </Fila>
-        ) : null}
+        <View>
+          <Text style={styles.filaTitulo}>Horario</Text>
+          <View style={styles.horario}>
+            <Pressable style={[styles.selectorHora, conFranja && styles.selectorHoraActivo]} onPress={() => setSelectorAbierto(true)}>
+              <Text style={[styles.selectorHoraTexto, conFranja && styles.chipTextoActivo]}>
+                {conFranja ? `${horaIni} – ${horaFin}` : 'Todo el día · elegir horario'}
+              </Text>
+            </Pressable>
+            {conFranja ? (
+              <Pressable style={styles.limpiar} onPress={() => setFranja(null)}>
+                <Text style={styles.limpiarTexto}>Todo el día</Text>
+              </Pressable>
+            ) : null}
+          </View>
+        </View>
         <Fila titulo="Tipo">
           {TIPOS.map((t) => (
             <Chip key={String(t.clave)} activo={tipo === t.clave} onPress={() => setTipo(t.clave)} etiqueta={t.etiqueta} />
           ))}
         </Fila>
-        {!franjaValida ? <Text style={styles.aviso}>La jornada termina a las 20:00: elige una hora más temprano o una duración menor.</Text> : null}
       </View>
 
       <EstadoCarga
         cargando={cargando}
         error={mensajeError}
-        vacio={!franjaValida || espacios.length === 0}
-        mensajeVacio={franjaValida ? 'No hay espacios para mostrar con estos filtros.' : ''}
+        vacio={espacios.length === 0}
+        mensajeVacio="No hay espacios para mostrar con estos filtros."
         onReintentar={refrescar}
       >
         <FlatList
@@ -105,6 +104,21 @@ export default function Espacios() {
           renderItem={({ item }) => <TarjetaEspacio espacio={item} conFranja={conFranja} onSolicitar={() => solicitar(item)} />}
         />
       </EstadoCarga>
+
+      <SelectorFranja
+        visible={selectorAbierto}
+        valorInicial={franja ?? franjaSugerida(fecha)}
+        hayFranja={conFranja}
+        onAplicar={(ini, fin) => {
+          setFranja({ ini, fin });
+          setSelectorAbierto(false);
+        }}
+        onLimpiar={() => {
+          setFranja(null);
+          setSelectorAbierto(false);
+        }}
+        onCerrar={() => setSelectorAbierto(false)}
+      />
     </View>
   );
 }
@@ -183,7 +197,12 @@ const styles = StyleSheet.create({
   chipActivo: { backgroundColor: colores.azul, borderColor: colores.azul },
   chipTexto: { color: colores.ink, fontWeight: '600', fontSize: 13 },
   chipTextoActivo: { color: colores.blanco },
-  aviso: { color: colores.peligro, fontSize: 12, marginHorizontal: 16, marginTop: 4 },
+  horario: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 16, paddingVertical: 6 },
+  selectorHora: { borderRadius: 999, borderWidth: 1, borderColor: colores.linea, paddingHorizontal: 16, paddingVertical: 9, backgroundColor: colores.paper },
+  selectorHoraActivo: { backgroundColor: colores.azul, borderColor: colores.azul },
+  selectorHoraTexto: { color: colores.ink, fontWeight: '600', fontSize: 13 },
+  limpiar: { paddingVertical: 8, paddingHorizontal: 4 },
+  limpiarTexto: { color: colores.azul, fontWeight: '700', fontSize: 13 },
   lista: { padding: 16 },
   encabezado: { color: colores.ink, fontWeight: '700', marginBottom: 10 },
   tarjeta: { backgroundColor: colores.blanco, borderRadius: 14, borderWidth: 1, borderColor: colores.linea, padding: 14, gap: 6 },
