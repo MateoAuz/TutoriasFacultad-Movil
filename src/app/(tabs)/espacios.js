@@ -67,10 +67,10 @@ function diaPorDefecto() {
 }
 
 // Hora que se usa para decir "disponible ahora" cuando no hay horario elegido y se mira hoy.
-// Si ahora no hay actividad en la facultad, se toma la siguiente hora en que sí la hay.
+// Solo existe dentro de la jornada (07:00 a 20:00); en el almuerzo se toma la hora en que termina.
 function momentoDeReferencia(ahora) {
   if (ahora >= FIN_JORNADA) return { minutos: null, motivo: 'la jornada de hoy ya terminó' };
-  if (ahora < INICIO_JORNADA) return { minutos: INICIO_JORNADA, motivo: 'la jornada aún no comienza' };
+  if (ahora < INICIO_JORNADA) return { minutos: null, motivo: 'la jornada comienza a las 07:00' };
   if (ahora >= ALMUERZO_INI && ahora < ALMUERZO_FIN) return { minutos: ALMUERZO_FIN, motivo: 'hora de almuerzo' };
   return { minutos: ahora, motivo: null };
 }
@@ -102,6 +102,10 @@ export default function Espacios() {
   const enMomento = !conFranja && esHoy && referencia.minutos !== null; // sin horario y mirando hoy: disponibilidad "en este momento"
   const horaReferencia = referencia.minutos;
   const esAhoraMismo = referencia.motivo === null;
+  // El filtro de estado solo tiene sentido si hay una hora concreta que evaluar: un horario elegido
+  // (siempre dentro de la jornada) o el momento actual dentro de la jornada de hoy.
+  const mostrarFiltroEstado = conFranja || enMomento;
+  const estadoFiltro = mostrarFiltroEstado ? filtros.estado : null;
 
   const cargar = useCallback(() => espaciosApi.disponibilidad(fecha, horaIni, horaFin), [fecha, horaIni, horaFin]);
   const { data, cargando, refrescando, mensajeError, refrescar } = useRecurso(cargar, 'No se pudo consultar la disponibilidad.');
@@ -116,12 +120,12 @@ export default function Espacios() {
       (e) =>
         (!filtros.tipo || e.tipo === filtros.tipo) &&
         (!filtros.bloque || e.bloque === filtros.bloque) &&
-        (!filtros.estado || (filtros.estado === 'DISPONIBLES' ? e.disponible : !e.disponible))
+        (!estadoFiltro || (estadoFiltro === 'DISPONIBLES' ? e.disponible : !e.disponible))
     );
     // Los disponibles primero y luego por nombre.
     return filtrados.sort((a, b) => Number(b.disponible) - Number(a.disponible) || a.nom_esp.localeCompare(b.nom_esp));
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [data, filtros, conFranja, enMomento, horaReferencia]);
+  }, [data, filtros, estadoFiltro, conFranja, enMomento, horaReferencia]);
 
   function solicitar(esp) {
     router.push({
@@ -131,19 +135,11 @@ export default function Espacios() {
   }
 
   // Texto que aclara qué significa el filtro de estado según lo que se está mirando.
-  const esDisponibles = filtros.estado === 'DISPONIBLES';
+  const esDisponibles = estadoFiltro === 'DISPONIBLES';
   const textoFiltro = conFranja
     ? `${esDisponibles ? 'Disponibles' : 'Ocupados'} de ${horaIni} a ${horaFin}`
-    : enMomento
-      ? `${esDisponibles ? 'Disponibles' : 'Ocupados'} ${esAhoraMismo ? `ahora (${minutosAHora(horaReferencia)})` : `a las ${minutosAHora(horaReferencia)}`}`
-      : esDisponibles
-        ? 'Sin actividades este día'
-        : 'Con actividades este día';
-  const textoEstadoHoy = enMomento
-    ? esAhoraMismo
-      ? `Estado ahora (${minutosAHora(horaReferencia)})`
-      : `Estado a las ${minutosAHora(horaReferencia)}`
-    : 'Estado del día';
+    : `${esDisponibles ? 'Disponibles' : 'Ocupados'} ${esAhoraMismo ? `ahora (${minutosAHora(horaReferencia ?? 0)})` : `a las ${minutosAHora(horaReferencia ?? 0)}`}`;
+  const textoEstadoHoy = esAhoraMismo ? `Estado ahora (${minutosAHora(horaReferencia ?? 0)})` : `Estado a las ${minutosAHora(horaReferencia ?? 0)}`;
 
   return (
     <View style={styles.pantalla}>
@@ -179,7 +175,9 @@ export default function Espacios() {
         <View>
           <Text style={styles.filaTitulo}>Filtrar</Text>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chips}>
-            {Object.entries(FILTROS).map(([clave, f]) => {
+            {Object.entries(FILTROS)
+              .filter(([clave]) => clave !== 'estado' || mostrarFiltroEstado)
+              .map(([clave, f]) => {
               const elegido = f.opciones.find((o) => o.clave === filtros[clave]);
               const activo = filtros[clave] !== null;
               return (
@@ -213,16 +211,18 @@ export default function Espacios() {
                 {fechaEtiqueta(fecha)}
                 {conFranja ? ` · ${horaIni} – ${horaFin}` : ''}
               </Text>
-              {filtros.estado ? (
+              {estadoFiltro ? (
                 <Text style={styles.subencabezado}>
                   {textoFiltro}
-                  {!conFranja && esHoy && referencia.motivo ? ` · ${referencia.motivo}` : ''}
+                  {enMomento && referencia.motivo ? ` · ${referencia.motivo}` : ''}
                 </Text>
-              ) : !conFranja && esHoy ? (
+              ) : enMomento ? (
                 <Text style={styles.subencabezado}>
                   {textoEstadoHoy}
                   {referencia.motivo ? ` · ${referencia.motivo}` : ''}
                 </Text>
+              ) : !conFranja && esHoy ? (
+                <Text style={styles.subencabezado}>Fuera de horario: {referencia.motivo}</Text>
               ) : null}
             </View>
           }
