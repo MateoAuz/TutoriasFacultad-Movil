@@ -13,10 +13,11 @@ function Pestanas() {
         tabBarActiveTintColor: colores.azul,
       }}
     >
-      <Tabs.Screen name="index" options={{ title: 'Tutorías' }} />
+      <Tabs.Screen name="index" options={{ title: 'Inicio' }} />
+      <Tabs.Screen name="tutorias" options={{ title: 'Tutorías' }} />
       <Tabs.Screen name="escanear" options={{ title: 'Escanear' }} />
       <Tabs.Screen name="espacios" options={{ title: 'Espacios' }} />
-      <Tabs.Screen name="historial" options={{ title: 'Historial' }} />
+      <Tabs.Screen name="historial" options={{ title: 'Historial', href: null }} />
       <Tabs.Screen
         name="notificaciones"
         options={{ title: 'Avisos', tabBarBadge: noLeidas > 0 ? (noLeidas > 99 ? '99+' : noLeidas) : undefined }}

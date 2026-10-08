@@ -69,7 +69,7 @@ export default function Escanear() {
         <Text style={styles.titulo}>{resultado.ok ? 'Asistencia registrada' : 'No se pudo registrar'}</Text>
         <Text style={styles.texto}>{resultado.mensaje}</Text>
         {resultado.ok ? (
-          <Pressable style={styles.boton} onPress={() => { escanearOtro(); router.navigate('/'); }}>
+          <Pressable style={styles.boton} onPress={() => { escanearOtro(); router.navigate('/tutorias'); }}>
             <Text style={styles.botonTexto}>Ver mis tutorías</Text>
           </Pressable>
         ) : null}

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { FlatList, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { FlatList, Pressable, RefreshControl, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { router } from 'expo-router';
 import EstadoCarga from '../../components/EstadoCarga';
 import SelectorFecha from '../../components/SelectorFecha';
@@ -10,14 +10,18 @@ import { useRecurso } from '../../hooks/useRecurso';
 import { ETIQUETA_BLOQUE, ETIQUETA_TIPO, diasHabiles, fechaDeHoy, fechaEtiqueta, horaAMinutos, minutosAHora, primerDiaHabil } from '../../lib/formato';
 import { colores } from '../../lib/tema';
 
-// Franja sugerida al abrir el selector: si miras hoy, desde la próxima media hora; si no, 09:00 – 10:00.
+// Franja sugerida al abrir el selector: la hora de inicio hábil más cercana (de media en media hora)
+// y una hora de duración. Mirando otro día, arranca con la primera hora de la jornada (07:00).
 function franjaSugerida(fecha) {
-  let inicio = 9 * 60;
+  let inicio = 7 * 60;
   if (fecha === fechaDeHoy()) {
-    const ahora = new Date();
-    inicio = Math.min(Math.max(Math.ceil((ahora.getHours() * 60 + ahora.getMinutes()) / 30) * 30, 7 * 60), 19 * 60);
+    const ahora = minutosAhora();
+    inicio = Math.ceil(ahora / 30) * 30;
+    if (inicio < 7 * 60) inicio = 7 * 60; // antes de que abra la jornada
+    else if (inicio >= ALMUERZO_INI && inicio < ALMUERZO_FIN) inicio = ALMUERZO_FIN; // media hora de almuerzo
+    else if (inicio >= FIN_JORNADA) inicio = ahora < FIN_JORNADA ? FIN_JORNADA - 30 : 7 * 60; // últimos minutos o jornada terminada
   }
-  return { ini: minutosAHora(inicio), fin: minutosAHora(inicio + 60) };
+  return { ini: minutosAHora(inicio), fin: minutosAHora(Math.min(inicio + 60, FIN_JORNADA)) };
 }
 
 const FILTROS = {
@@ -55,6 +59,9 @@ const FIN_JORNADA = 20 * 60;
 const ALMUERZO_INI = 13 * 60;
 const ALMUERZO_FIN = 14 * 60;
 
+// Para buscar sin importar mayúsculas ni tildes.
+const normalizar = (texto) => texto.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().trim();
+
 const minutosAhora = () => {
   const d = new Date();
   return d.getHours() * 60 + d.getMinutes();
@@ -83,6 +90,7 @@ export default function Espacios() {
   const [calendarioAbierto, setCalendarioAbierto] = useState(false);
   const [franja, setFranja] = useState(null); // null = agenda de todo el día; { ini, fin } = franja a consultar
   const [selectorAbierto, setSelectorAbierto] = useState(false);
+  const [busqueda, setBusqueda] = useState('');
   const [filtros, setFiltros] = useState({ tipo: null, bloque: null, estado: null });
   const [filtroAbierto, setFiltroAbierto] = useState(null); // 'tipo' | 'bloque' | 'estado' | null
 
@@ -116,8 +124,10 @@ export default function Espacios() {
       ...e,
       disponible: conFranja ? e.libre : enMomento ? !ocupadoAhora(e, horaReferencia) : e.libre,
     }));
+    const texto = normalizar(busqueda);
     const filtrados = lista.filter(
       (e) =>
+        (!texto || normalizar(e.nom_esp).includes(texto)) &&
         (!filtros.tipo || e.tipo === filtros.tipo) &&
         (!filtros.bloque || e.bloque === filtros.bloque) &&
         (!estadoFiltro || (estadoFiltro === 'DISPONIBLES' ? e.disponible : !e.disponible))
@@ -125,7 +135,7 @@ export default function Espacios() {
     // Los disponibles primero y luego por nombre.
     return filtrados.sort((a, b) => Number(b.disponible) - Number(a.disponible) || a.nom_esp.localeCompare(b.nom_esp));
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [data, filtros, estadoFiltro, conFranja, enMomento, horaReferencia]);
+  }, [data, busqueda, filtros, estadoFiltro, conFranja, enMomento, horaReferencia]);
 
   function solicitar(esp) {
     router.push({
@@ -144,6 +154,22 @@ export default function Espacios() {
   return (
     <View style={styles.pantalla}>
       <View style={styles.filtros}>
+        <View style={styles.buscador}>
+          <TextInput
+            style={styles.buscadorInput}
+            placeholder="Buscar aula o laboratorio"
+            placeholderTextColor="#7A8CA0"
+            value={busqueda}
+            onChangeText={setBusqueda}
+            autoCorrect={false}
+            returnKeyType="search"
+          />
+          {busqueda ? (
+            <Pressable style={styles.buscadorLimpiar} onPress={() => setBusqueda('')} hitSlop={8}>
+              <Text style={styles.buscadorLimpiarTexto}>✕</Text>
+            </Pressable>
+          ) : null}
+        </View>
         <View>
           <Text style={styles.filaTitulo}>Día</Text>
           <View style={styles.horario}>
@@ -203,6 +229,7 @@ export default function Espacios() {
           data={espacios}
           keyExtractor={(e) => String(e.id_esp)}
           contentContainerStyle={styles.lista}
+          keyboardShouldPersistTaps="handled"
           ItemSeparatorComponent={() => <View style={{ height: 10 }} />}
           refreshControl={<RefreshControl refreshing={refrescando} onRefresh={refrescar} colors={[colores.azul]} />}
           ListHeaderComponent={
@@ -232,6 +259,7 @@ export default function Espacios() {
               conFranja={conFranja}
               enMomento={enMomento}
               textoMomento={esAhoraMismo ? 'ahora' : `a las ${minutosAHora(horaReferencia ?? 0)}`}
+              minutoActual={enMomento && esAhoraMismo ? horaReferencia : null}
               onSolicitar={() => solicitar(item)}
             />
           )}
@@ -278,7 +306,7 @@ export default function Espacios() {
   );
 }
 
-function TarjetaEspacio({ espacio, conFranja, enMomento, textoMomento, onSolicitar }) {
+function TarjetaEspacio({ espacio, conFranja, enMomento, textoMomento, minutoActual, onSolicitar }) {
   const ubicacion = [
     ETIQUETA_TIPO[espacio.tipo],
     espacio.bloque && ETIQUETA_BLOQUE[espacio.bloque],
@@ -315,13 +343,17 @@ function TarjetaEspacio({ espacio, conFranja, enMomento, textoMomento, onSolicit
       </View>
       <Text style={styles.ubicacion}>{ubicacion}</Text>
 
-      {espacio.ocupaciones.length > 0 ? (
+      {/* Con un horario elegido solo importa si está disponible; el detalle del día se ve sin horario. */}
+      {!conFranja && espacio.ocupaciones.length > 0 ? (
         <View style={styles.ocupaciones}>
-          {espacio.ocupaciones.map((o, i) => (
-            <Text key={`${o.hora_ini}-${i}`} style={styles.ocupacion} numberOfLines={1}>
-              {o.hora_ini}–{o.hora_fin} · {o.tipo === 'CLASE' ? 'Clase' : 'Reserva'}: {o.etiqueta}
-            </Text>
-          ))}
+          {espacio.ocupaciones.map((o, i) => {
+            const enCurso = minutoActual !== null && horaAMinutos(o.hora_ini) <= minutoActual && minutoActual < horaAMinutos(o.hora_fin);
+            return (
+              <Text key={`${o.hora_ini}-${i}`} style={[styles.ocupacion, enCurso && styles.ocupacionActual]} numberOfLines={1}>
+                {o.hora_ini}–{o.hora_fin} · {o.tipo === 'CLASE' ? 'Clase' : 'Reserva'}: {o.etiqueta}
+              </Text>
+            );
+          })}
         </View>
       ) : null}
 
@@ -338,6 +370,10 @@ const styles = StyleSheet.create({
   pantalla: { flex: 1, backgroundColor: colores.paper },
   filtros: { backgroundColor: colores.blanco, borderBottomWidth: 1, borderBottomColor: colores.linea, paddingVertical: 8, gap: 2 },
   filaTitulo: { color: colores.celeste, fontSize: 11, fontWeight: '700', letterSpacing: 1, textTransform: 'uppercase', marginLeft: 16, marginTop: 6 },
+  buscador: { flexDirection: 'row', alignItems: 'center', marginHorizontal: 16, marginTop: 4, marginBottom: 2, backgroundColor: colores.paper, borderRadius: 10, borderWidth: 1, borderColor: colores.linea },
+  buscadorInput: { flex: 1, paddingHorizontal: 14, paddingVertical: 10, fontSize: 14, color: colores.ink },
+  buscadorLimpiar: { paddingHorizontal: 14 },
+  buscadorLimpiarTexto: { color: colores.ink, opacity: 0.5, fontWeight: '700' },
   chips: { paddingHorizontal: 16, paddingVertical: 6, gap: 8 },
   chip: { borderRadius: 999, borderWidth: 1, borderColor: colores.linea, paddingHorizontal: 14, paddingVertical: 7, backgroundColor: colores.paper },
   chipActivo: { backgroundColor: colores.azul, borderColor: colores.azul },
@@ -359,7 +395,8 @@ const styles = StyleSheet.create({
   estadoTexto: { fontSize: 11, fontWeight: '700' },
   ubicacion: { color: colores.ink, opacity: 0.6, fontSize: 13 },
   ocupaciones: { marginTop: 4, gap: 2 },
-  ocupacion: { color: colores.ink, opacity: 0.75, fontSize: 12 },
+  ocupacion: { color: colores.ink, opacity: 0.6, fontSize: 12, paddingVertical: 2, paddingHorizontal: 6, marginHorizontal: -6 },
+  ocupacionActual: { opacity: 1, fontWeight: '700', backgroundColor: '#2378AD1F', borderRadius: 6, overflow: 'hidden' },
   boton: { backgroundColor: colores.azul, borderRadius: 10, paddingVertical: 11, alignItems: 'center', marginTop: 8 },
   botonTexto: { color: colores.blanco, fontWeight: '700' },
 });
