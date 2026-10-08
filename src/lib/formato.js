@@ -102,3 +102,18 @@ export function minutosAHora(minutos) {
 
 export const ETIQUETA_TIPO = { AULA: 'Aula', LABORATORIO: 'Laboratorio' };
 export const ETIQUETA_BLOQUE = { BLOQUE_1: 'Bloque 1', BLOQUE_2: 'Bloque 2' };
+
+export const NOMBRES_MES = MESES_LARGOS;
+
+// "2026-10-07" -> "Miércoles 07 oct" (con el año solo si no es el actual).
+export function fechaEtiqueta(fechaISO) {
+  const [y, m, d] = fechaISO.split('-').map(Number);
+  const dia = DIAS[new Date(Date.UTC(y, m - 1, d)).getUTCDay()];
+  const base = `${dia.charAt(0).toUpperCase()}${dia.slice(1)} ${pad(d)} ${MESES[m - 1]}`;
+  return y === new Date().getFullYear() ? base : `${base} ${y}`;
+}
+
+// Primer día hábil desde hoy (hoy mismo si es de lunes a viernes).
+export function primerDiaHabil() {
+  return diasHabiles(1)[0].iso;
+}

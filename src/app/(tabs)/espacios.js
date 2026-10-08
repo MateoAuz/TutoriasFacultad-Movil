@@ -2,10 +2,11 @@ import { useCallback, useMemo, useState } from 'react';
 import { FlatList, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { router } from 'expo-router';
 import EstadoCarga from '../../components/EstadoCarga';
+import SelectorFecha from '../../components/SelectorFecha';
 import SelectorFranja from '../../components/SelectorFranja';
 import { espaciosApi } from '../../api/espacios';
 import { useRecurso } from '../../hooks/useRecurso';
-import { ETIQUETA_BLOQUE, ETIQUETA_TIPO, diasHabiles, fechaDeHoy, formatearFecha, minutosAHora } from '../../lib/formato';
+import { ETIQUETA_BLOQUE, ETIQUETA_TIPO, fechaDeHoy, fechaEtiqueta, minutosAHora, primerDiaHabil } from '../../lib/formato';
 import { colores } from '../../lib/tema';
 
 // Franja sugerida al abrir el selector: si miras hoy, desde la próxima media hora; si no, 09:00 – 10:00.
@@ -25,8 +26,8 @@ const TIPOS = [
 ];
 
 export default function Espacios() {
-  const dias = useMemo(() => diasHabiles(10), []);
-  const [fecha, setFecha] = useState(dias[0].iso);
+  const [fecha, setFecha] = useState(primerDiaHabil); // hoy, o el lunes si hoy es fin de semana
+  const [calendarioAbierto, setCalendarioAbierto] = useState(false);
   const [franja, setFranja] = useState(null); // null = agenda de todo el día; { ini, fin } = franja libre
   const [selectorAbierto, setSelectorAbierto] = useState(false);
   const [tipo, setTipo] = useState(null);
@@ -55,11 +56,15 @@ export default function Espacios() {
   return (
     <View style={styles.pantalla}>
       <View style={styles.filtros}>
-        <Fila titulo="Día">
-          {dias.map((d) => (
-            <Chip key={d.iso} activo={fecha === d.iso} onPress={() => setFecha(d.iso)} etiqueta={`${d.iso === fechaDeHoy() ? 'Hoy' : d.dia} ${d.numero}`} />
-          ))}
-        </Fila>
+        <View>
+          <Text style={styles.filaTitulo}>Día</Text>
+          <View style={styles.horario}>
+            <Pressable style={[styles.selectorHora, styles.selectorHoraActivo]} onPress={() => setCalendarioAbierto(true)}>
+              <Text style={[styles.selectorHoraTexto, styles.chipTextoActivo]}>{fechaEtiqueta(fecha)}</Text>
+            </Pressable>
+            {fecha === fechaDeHoy() ? <Text style={styles.hoy}>Hoy</Text> : null}
+          </View>
+        </View>
         <View>
           <Text style={styles.filaTitulo}>Horario</Text>
           <View style={styles.horario}>
@@ -97,13 +102,23 @@ export default function Espacios() {
           refreshControl={<RefreshControl refreshing={refrescando} onRefresh={refrescar} colors={[colores.azul]} />}
           ListHeaderComponent={
             <Text style={styles.encabezado}>
-              {formatearFecha(fecha)}
+              {fechaEtiqueta(fecha)}
               {conFranja ? ` · ${horaIni} – ${horaFin}` : ''}
             </Text>
           }
           renderItem={({ item }) => <TarjetaEspacio espacio={item} conFranja={conFranja} onSolicitar={() => solicitar(item)} />}
         />
       </EstadoCarga>
+
+      <SelectorFecha
+        visible={calendarioAbierto}
+        fecha={fecha}
+        onElegir={(iso) => {
+          setFecha(iso);
+          setCalendarioAbierto(false);
+        }}
+        onCerrar={() => setCalendarioAbierto(false)}
+      />
 
       <SelectorFranja
         visible={selectorAbierto}
@@ -132,13 +147,14 @@ function TarjetaEspacio({ espacio, conFranja, onSolicitar }) {
   ]
     .filter(Boolean)
     .join(' · ');
+  const nActividades = espacio.ocupaciones.length;
   const estado = conFranja
     ? espacio.libre
-      ? 'Libre en esa franja'
-      : 'Ocupada en esa franja'
+      ? 'Disponible'
+      : 'No disponible'
     : espacio.libre
-      ? 'Libre todo el día'
-      : `${espacio.ocupaciones.length} actividad(es)`;
+      ? 'Disponible todo el día'
+      : `${nActividades} ${nActividades === 1 ? 'actividad' : 'actividades'}`;
 
   return (
     <View style={styles.tarjeta}>
@@ -201,6 +217,7 @@ const styles = StyleSheet.create({
   selectorHora: { borderRadius: 999, borderWidth: 1, borderColor: colores.linea, paddingHorizontal: 16, paddingVertical: 9, backgroundColor: colores.paper },
   selectorHoraActivo: { backgroundColor: colores.azul, borderColor: colores.azul },
   selectorHoraTexto: { color: colores.ink, fontWeight: '600', fontSize: 13 },
+  hoy: { color: colores.celeste, fontWeight: '700', fontSize: 13 },
   limpiar: { paddingVertical: 8, paddingHorizontal: 4 },
   limpiarTexto: { color: colores.azul, fontWeight: '700', fontSize: 13 },
   lista: { padding: 16 },
