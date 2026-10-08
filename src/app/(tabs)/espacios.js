@@ -130,13 +130,20 @@ export default function Espacios() {
     });
   }
 
-  const criterio = conFranja
-    ? `de ${horaIni} a ${horaFin}`
+  // Texto que aclara qué significa el filtro de estado según lo que se está mirando.
+  const esDisponibles = filtros.estado === 'DISPONIBLES';
+  const textoFiltro = conFranja
+    ? `${esDisponibles ? 'Disponibles' : 'Ocupados'} de ${horaIni} a ${horaFin}`
     : enMomento
-      ? esAhoraMismo
-        ? `ahora (${minutosAHora(horaReferencia)})`
-        : `a las ${minutosAHora(horaReferencia)}`
-      : 'todo el día';
+      ? `${esDisponibles ? 'Disponibles' : 'Ocupados'} ${esAhoraMismo ? `ahora (${minutosAHora(horaReferencia)})` : `a las ${minutosAHora(horaReferencia)}`}`
+      : esDisponibles
+        ? 'Sin actividades este día'
+        : 'Con actividades este día';
+  const textoEstadoHoy = enMomento
+    ? esAhoraMismo
+      ? `Estado ahora (${minutosAHora(horaReferencia)})`
+      : `Estado a las ${minutosAHora(horaReferencia)}`
+    : 'Estado del día';
 
   return (
     <View style={styles.pantalla}>
@@ -208,16 +215,13 @@ export default function Espacios() {
               </Text>
               {filtros.estado ? (
                 <Text style={styles.subencabezado}>
-                  {filtros.estado === 'DISPONIBLES' ? 'Disponibles' : 'Ocupados'} {criterio}
-                  {enMomento && !esAhoraMismo ? ` · ${referencia.motivo}` : ''}
+                  {textoFiltro}
+                  {!conFranja && esHoy && referencia.motivo ? ` · ${referencia.motivo}` : ''}
                 </Text>
               ) : !conFranja && esHoy ? (
                 <Text style={styles.subencabezado}>
-                  {enMomento
-                    ? esAhoraMismo
-                      ? `Estado ${criterio}`
-                      : `Estado ${criterio} · ${referencia.motivo}`
-                    : `Fuera de horario: ${referencia.motivo}`}
+                  {textoEstadoHoy}
+                  {referencia.motivo ? ` · ${referencia.motivo}` : ''}
                 </Text>
               ) : null}
             </View>
@@ -290,10 +294,10 @@ function TarjetaEspacio({ espacio, conFranja, enMomento, textoMomento, onSolicit
   let tono = espacio.disponible ? 'si' : 'no';
   if (conFranja) {
     estado = espacio.disponible ? 'Disponible' : 'No disponible';
-  } else if (espacio.libre) {
-    estado = 'Disponible todo el día';
   } else if (enMomento) {
     estado = espacio.disponible ? `Disponible ${textoMomento}` : `No disponible ${textoMomento}`;
+  } else if (espacio.libre) {
+    estado = 'Sin actividades';
   } else {
     estado = `${nActividades} ${nActividades === 1 ? 'actividad' : 'actividades'}`;
     tono = 'info';
