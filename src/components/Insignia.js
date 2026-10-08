@@ -6,6 +6,9 @@ const ESTILOS = {
   EN_CURSO: { fondo: '#1B7A5B26', texto: colores.exito, etiqueta: 'En curso' },
   CONCLUIDA: { fondo: '#002C561A', texto: colores.azulOscuro, etiqueta: 'Concluida' },
   CANCELADA: { fondo: '#B3261E1A', texto: colores.peligro, etiqueta: 'Cancelada' },
+  PENDIENTE: { fondo: '#2378AD26', texto: colores.celeste, etiqueta: 'Pendiente' },
+  ACEPTADA: { fondo: '#1B7A5B26', texto: colores.exito, etiqueta: 'Aceptada' },
+  RECHAZADA: { fondo: '#B3261E1A', texto: colores.peligro, etiqueta: 'Rechazada' },
   ASISTIDA: { fondo: '#1B7A5B26', texto: colores.exito, etiqueta: 'Asistencia registrada' },
 };
 

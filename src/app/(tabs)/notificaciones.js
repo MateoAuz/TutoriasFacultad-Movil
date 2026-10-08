@@ -6,15 +6,17 @@ import { useNotificaciones } from '../../context/NotificacionesContext';
 import { tiempoRelativo } from '../../lib/formato';
 import { colores } from '../../lib/tema';
 
-// Etiqueta y destino al tocar cada tipo de aviso. Los tipos sin pantalla propia en el móvil
-// (solicitudes) solo se marcan como leídos.
+// `t` fuerza a Tutorías a reaccionar aunque el parámetro `seccion` no haya cambiado.
+const DESTINO_SOLICITUDES = () => ({ pathname: '/', params: { seccion: 'solicitudes', t: String(Date.now()) } });
+
+// Etiqueta y destino al tocar cada tipo de aviso.
 const TIPOS = {
   TUTORIA_INICIO: { etiqueta: 'Tutoría', destino: '/escanear' },
   DOCUMENTO_NUEVO: { etiqueta: 'Material', destino: '/' },
   RESERVA_CANCELADA: { etiqueta: 'Cancelada', destino: '/' },
-  SOLICITUD_ACEPTADA: { etiqueta: 'Solicitud', destino: null },
-  SOLICITUD_RECHAZADA: { etiqueta: 'Solicitud', destino: null },
-  SOLICITUD_NUEVA: { etiqueta: 'Solicitud', destino: null },
+  SOLICITUD_ACEPTADA: { etiqueta: 'Solicitud', destino: DESTINO_SOLICITUDES },
+  SOLICITUD_RECHAZADA: { etiqueta: 'Solicitud', destino: DESTINO_SOLICITUDES },
+  SOLICITUD_NUEVA: { etiqueta: 'Solicitud', destino: DESTINO_SOLICITUDES },
 };
 
 export default function Notificaciones() {
@@ -30,7 +32,7 @@ export default function Notificaciones() {
   function abrir(n) {
     if (!n.leida) marcarLeida(n.id_not);
     const destino = TIPOS[n.tipo]?.destino;
-    if (destino) router.navigate(destino);
+    if (destino) router.navigate(typeof destino === 'function' ? destino() : destino);
   }
 
   return (

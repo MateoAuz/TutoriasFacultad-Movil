@@ -1,26 +1,37 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { FlatList, Pressable, RefreshControl, StyleSheet, Text, View } from 'react-native';
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import EstadoCarga from '../../components/EstadoCarga';
+import TarjetaSolicitud from '../../components/TarjetaSolicitud';
 import TarjetaTutoria from '../../components/TarjetaTutoria';
+import { solicitudesApi } from '../../api/solicitudes';
 import { tutoriasApi } from '../../api/tutorias';
 import { useRecurso } from '../../hooks/useRecurso';
 import { colores } from '../../lib/tema';
 
+// Las tutorías ya realizadas viven en la pestaña Historial; aquí solo lo que viene y lo que se pidió.
 const SECCIONES = [
   { clave: 'proximas', etiqueta: 'Próximas' },
-  { clave: 'realizadas', etiqueta: 'Realizadas' },
+  { clave: 'solicitudes', etiqueta: 'Mis solicitudes' },
 ];
 
 export default function Tutorias() {
+  const { seccion: seccionInicial, t } = useLocalSearchParams();
   const [seccion, setSeccion] = useState('proximas');
   const proximas = useRecurso(tutoriasApi.proximas, 'No se pudieron cargar las tutorías.');
   const asistidas = useRecurso(tutoriasApi.asistidas, 'No se pudo cargar tu historial de tutorías.');
+  const solicitudes = useRecurso(solicitudesApi.mias, 'No se pudieron cargar tus solicitudes.');
 
-  // Ids de tutorías donde ya registré asistencia, para marcarlas también en "Próximas".
-  const idsAsistidos = useMemo(() => new Set((asistidas.data ?? []).map((t) => t.id_rev)), [asistidas.data]);
+  // Permite abrir directo "Mis solicitudes" desde un aviso o tras enviar una solicitud.
+  useEffect(() => {
+    if (seccionInicial === 'solicitudes' || seccionInicial === 'proximas') setSeccion(seccionInicial);
+  }, [seccionInicial, t]);
 
-  const activa = seccion === 'proximas' ? proximas : asistidas;
+  // Tutorías donde ya registré asistencia, para marcarlas en "Próximas" (p. ej. la que está en curso).
+  const idsAsistidos = useMemo(() => new Set((asistidas.data ?? []).map((a) => a.id_rev)), [asistidas.data]);
+
+  const esProximas = seccion === 'proximas';
+  const activa = esProximas ? proximas : solicitudes;
   const lista = activa.data ?? [];
 
   function abrir(tutoria) {
@@ -42,19 +53,25 @@ export default function Tutorias() {
         error={activa.mensajeError}
         vacio={lista.length === 0}
         mensajeVacio={
-          seccion === 'proximas'
-            ? 'No tienes tutorías próximas. Revisa que estés matriculado en tus cursos.'
-            : 'Todavía no has registrado asistencia a ninguna tutoría.'
+          esProximas
+            ? 'No tienes tutorías próximas. Revisa que estés matriculado en tus cursos o solicita una desde la pestaña Espacios.'
+            : 'Aún no has enviado solicitudes. Busca un espacio libre en la pestaña Espacios y pide una tutoría.'
         }
         onReintentar={activa.refrescar}
       >
         <FlatList
           data={lista}
-          keyExtractor={(t) => String(t.id_rev)}
+          keyExtractor={(item) => String(esProximas ? item.id_rev : item.id_sol)}
           contentContainerStyle={styles.lista}
           ItemSeparatorComponent={() => <View style={{ height: 12 }} />}
           refreshControl={<RefreshControl refreshing={activa.refrescando} onRefresh={activa.refrescar} colors={[colores.azul]} />}
-          renderItem={({ item }) => <TarjetaTutoria tutoria={item} asistio={idsAsistidos.has(item.id_rev)} onPress={() => abrir(item)} />}
+          renderItem={({ item }) =>
+            esProximas ? (
+              <TarjetaTutoria tutoria={item} asistio={idsAsistidos.has(item.id_rev)} onPress={() => abrir(item)} />
+            ) : (
+              <TarjetaSolicitud solicitud={item} />
+            )
+          }
         />
       </EstadoCarga>
     </View>

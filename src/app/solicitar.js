@@ -23,8 +23,8 @@ export default function SolicitarTutoria() {
     setError(null);
     try {
       await solicitudesApi.crear({ id_par: idParalelo, id_esp: Number(id_esp), fecha, hor_ini, hor_fin, tema: tema.trim() });
-      Alert.alert('Solicitud enviada', 'El docente recibirá tu solicitud. Te avisaremos en la pestaña Avisos cuando responda.', [
-        { text: 'Entendido', onPress: () => router.back() },
+      Alert.alert('Solicitud enviada', 'El docente recibirá tu solicitud. Puedes seguirla en Tutorías → Mis solicitudes y te avisaremos en Avisos cuando responda.', [
+        { text: 'Ver mis solicitudes', onPress: () => router.navigate({ pathname: '/', params: { seccion: 'solicitudes', t: String(Date.now()) } }) },
       ]);
     } catch (err) {
       setError(mensajeDeError(err, 'No se pudo enviar la solicitud.'));
