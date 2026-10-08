@@ -7,7 +7,7 @@ import SelectorFranja from '../../components/SelectorFranja';
 import SelectorOpciones from '../../components/SelectorOpciones';
 import { espaciosApi } from '../../api/espacios';
 import { useRecurso } from '../../hooks/useRecurso';
-import { ETIQUETA_BLOQUE, ETIQUETA_TIPO, fechaDeHoy, fechaEtiqueta, horaAMinutos, minutosAHora, primerDiaHabil } from '../../lib/formato';
+import { ETIQUETA_BLOQUE, ETIQUETA_TIPO, diasHabiles, fechaDeHoy, fechaEtiqueta, horaAMinutos, minutosAHora, primerDiaHabil } from '../../lib/formato';
 import { colores } from '../../lib/tema';
 
 // Franja sugerida al abrir el selector: si miras hoy, desde la próxima media hora; si no, 09:00 – 10:00.
@@ -50,16 +50,36 @@ const FILTROS = {
   },
 };
 
+const INICIO_JORNADA = 7 * 60;
+const FIN_JORNADA = 20 * 60;
+const ALMUERZO_INI = 13 * 60;
+const ALMUERZO_FIN = 14 * 60;
+
 const minutosAhora = () => {
   const d = new Date();
   return d.getHours() * 60 + d.getMinutes();
 };
 
+// Día con el que abre la pantalla: hoy, salvo fin de semana o jornada terminada (ahí, el siguiente día hábil).
+function diaPorDefecto() {
+  const [primero, siguiente] = diasHabiles(2);
+  return primero.iso === fechaDeHoy() && minutosAhora() >= FIN_JORNADA ? siguiente.iso : primero.iso;
+}
+
+// Hora que se usa para decir "disponible ahora" cuando no hay horario elegido y se mira hoy.
+// Si ahora no hay actividad en la facultad, se toma la siguiente hora en que sí la hay.
+function momentoDeReferencia(ahora) {
+  if (ahora >= FIN_JORNADA) return { minutos: null, motivo: 'la jornada de hoy ya terminó' };
+  if (ahora < INICIO_JORNADA) return { minutos: INICIO_JORNADA, motivo: 'la jornada aún no comienza' };
+  if (ahora >= ALMUERZO_INI && ahora < ALMUERZO_FIN) return { minutos: ALMUERZO_FIN, motivo: 'hora de almuerzo' };
+  return { minutos: ahora, motivo: null };
+}
+
 // ¿Hay una clase o reserva en curso en este instante? (ocupaciones con horas "HH:MM")
 const ocupadoAhora = (espacio, ahora) => espacio.ocupaciones.some((o) => horaAMinutos(o.hora_ini) <= ahora && ahora < horaAMinutos(o.hora_fin));
 
 export default function Espacios() {
-  const [fecha, setFecha] = useState(primerDiaHabil); // hoy, o el lunes si hoy es fin de semana
+  const [fecha, setFecha] = useState(diaPorDefecto);
   const [calendarioAbierto, setCalendarioAbierto] = useState(false);
   const [franja, setFranja] = useState(null); // null = agenda de todo el día; { ini, fin } = franja a consultar
   const [selectorAbierto, setSelectorAbierto] = useState(false);
@@ -78,8 +98,10 @@ export default function Espacios() {
   const conFranja = Boolean(franja);
   const esHoy = fecha === fechaDeHoy();
   const hoyEsHabil = primerDiaHabil() === fechaDeHoy();
-  const enMomento = !conFranja && esHoy; // sin horario y mirando hoy: disponibilidad "ahora mismo"
-  const ahora = minutosAhora();
+  const referencia = momentoDeReferencia(minutosAhora());
+  const enMomento = !conFranja && esHoy && referencia.minutos !== null; // sin horario y mirando hoy: disponibilidad "en este momento"
+  const horaReferencia = referencia.minutos;
+  const esAhoraMismo = referencia.motivo === null;
 
   const cargar = useCallback(() => espaciosApi.disponibilidad(fecha, horaIni, horaFin), [fecha, horaIni, horaFin]);
   const { data, cargando, refrescando, mensajeError, refrescar } = useRecurso(cargar, 'No se pudo consultar la disponibilidad.');
@@ -88,7 +110,7 @@ export default function Espacios() {
   const espacios = useMemo(() => {
     const lista = (data?.espacios ?? []).map((e) => ({
       ...e,
-      disponible: conFranja ? e.libre : enMomento ? !ocupadoAhora(e, ahora) : e.libre,
+      disponible: conFranja ? e.libre : enMomento ? !ocupadoAhora(e, horaReferencia) : e.libre,
     }));
     const filtrados = lista.filter(
       (e) =>
@@ -99,7 +121,7 @@ export default function Espacios() {
     // Los disponibles primero y luego por nombre.
     return filtrados.sort((a, b) => Number(b.disponible) - Number(a.disponible) || a.nom_esp.localeCompare(b.nom_esp));
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [data, filtros, conFranja, enMomento, ahora]);
+  }, [data, filtros, conFranja, enMomento, horaReferencia]);
 
   function solicitar(esp) {
     router.push({
@@ -108,7 +130,13 @@ export default function Espacios() {
     });
   }
 
-  const criterio = conFranja ? `de ${horaIni} a ${horaFin}` : enMomento ? `ahora (${minutosAHora(ahora)})` : 'todo el día';
+  const criterio = conFranja
+    ? `de ${horaIni} a ${horaFin}`
+    : enMomento
+      ? esAhoraMismo
+        ? `ahora (${minutosAHora(horaReferencia)})`
+        : `a las ${minutosAHora(horaReferencia)}`
+      : 'todo el día';
 
   return (
     <View style={styles.pantalla}>
@@ -121,7 +149,7 @@ export default function Espacios() {
             </Pressable>
             {hoyEsHabil && !esHoy ? (
               <Pressable style={styles.limpiar} onPress={() => setFecha(fechaDeHoy())}>
-                <Text style={styles.limpiarTexto}>Hoy</Text>
+                <Text style={styles.limpiarTexto}>Volver a hoy · {fechaEtiqueta(fechaDeHoy())}</Text>
               </Pressable>
             ) : null}
           </View>
@@ -181,11 +209,28 @@ export default function Espacios() {
               {filtros.estado ? (
                 <Text style={styles.subencabezado}>
                   {filtros.estado === 'DISPONIBLES' ? 'Disponibles' : 'Ocupados'} {criterio}
+                  {enMomento && !esAhoraMismo ? ` · ${referencia.motivo}` : ''}
+                </Text>
+              ) : !conFranja && esHoy ? (
+                <Text style={styles.subencabezado}>
+                  {enMomento
+                    ? esAhoraMismo
+                      ? `Estado ${criterio}`
+                      : `Estado ${criterio} · ${referencia.motivo}`
+                    : `Fuera de horario: ${referencia.motivo}`}
                 </Text>
               ) : null}
             </View>
           }
-          renderItem={({ item }) => <TarjetaEspacio espacio={item} conFranja={conFranja} enMomento={enMomento} onSolicitar={() => solicitar(item)} />}
+          renderItem={({ item }) => (
+            <TarjetaEspacio
+              espacio={item}
+              conFranja={conFranja}
+              enMomento={enMomento}
+              textoMomento={esAhoraMismo ? 'ahora' : `a las ${minutosAHora(horaReferencia ?? 0)}`}
+              onSolicitar={() => solicitar(item)}
+            />
+          )}
         />
       </EstadoCarga>
 
@@ -229,7 +274,7 @@ export default function Espacios() {
   );
 }
 
-function TarjetaEspacio({ espacio, conFranja, enMomento, onSolicitar }) {
+function TarjetaEspacio({ espacio, conFranja, enMomento, textoMomento, onSolicitar }) {
   const ubicacion = [
     ETIQUETA_TIPO[espacio.tipo],
     espacio.bloque && ETIQUETA_BLOQUE[espacio.bloque],
@@ -248,7 +293,7 @@ function TarjetaEspacio({ espacio, conFranja, enMomento, onSolicitar }) {
   } else if (espacio.libre) {
     estado = 'Disponible todo el día';
   } else if (enMomento) {
-    estado = espacio.disponible ? 'Disponible ahora' : 'No disponible ahora';
+    estado = espacio.disponible ? `Disponible ${textoMomento}` : `No disponible ${textoMomento}`;
   } else {
     estado = `${nActividades} ${nActividades === 1 ? 'actividad' : 'actividades'}`;
     tono = 'info';
