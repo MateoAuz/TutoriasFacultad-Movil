@@ -9,8 +9,8 @@ function Navegacion() {
 
   if (iniciando) {
     return (
-      <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: colores.paper }}>
-        <ActivityIndicator size="large" color={colores.azul} />
+      <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: colores.fondo }}>
+        <ActivityIndicator size="large" color={colores.primario} />
       </View>
     );
   }
@@ -25,8 +25,23 @@ function Navegacion() {
             headerShown: true,
             title: 'Tutoría',
             headerBackTitle: 'Atrás',
-            headerStyle: { backgroundColor: colores.azul },
+            headerStyle: { backgroundColor: colores.primario },
             headerTintColor: colores.blanco,
+            headerShadowVisible: false,
+            headerTitleStyle: { fontWeight: '700' },
+          }}
+        />
+        <Stack.Screen name="escanear" options={{ presentation: 'transparentModal', animation: 'slide_from_bottom', contentStyle: { backgroundColor: 'transparent' } }} />
+        <Stack.Screen
+          name="matricula"
+          options={{
+            headerShown: true,
+            title: 'Matrícula',
+            headerBackTitle: 'Atrás',
+            headerStyle: { backgroundColor: colores.primario },
+            headerTintColor: colores.blanco,
+            headerShadowVisible: false,
+            headerTitleStyle: { fontWeight: '700' },
           }}
         />
         <Stack.Screen
@@ -35,8 +50,10 @@ function Navegacion() {
             headerShown: true,
             title: 'Solicitar tutoría',
             headerBackTitle: 'Atrás',
-            headerStyle: { backgroundColor: colores.azul },
+            headerStyle: { backgroundColor: colores.primario },
             headerTintColor: colores.blanco,
+            headerShadowVisible: false,
+            headerTitleStyle: { fontWeight: '700' },
           }}
         />
       </Stack.Protected>

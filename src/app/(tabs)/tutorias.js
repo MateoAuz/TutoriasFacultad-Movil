@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { FlatList, Pressable, RefreshControl, SectionList, StyleSheet, Text, View } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
+import EncabezadoPantalla from '../../components/EncabezadoPantalla';
 import EstadoCarga from '../../components/EstadoCarga';
 import TarjetaSolicitud from '../../components/TarjetaSolicitud';
 import TarjetaTutoria from '../../components/TarjetaTutoria';
@@ -60,6 +61,7 @@ export default function Tutorias() {
 
   return (
     <View style={styles.pantalla}>
+      <EncabezadoPantalla titulo="Tutorías" subtitulo="Lo que viene y lo que has pedido" />
       <View style={styles.segmentos}>
         {SECCIONES.map((s) => (
           <Pressable key={s.clave} style={[styles.segmento, seccion === s.clave && styles.segmentoActivo]} onPress={() => setSeccion(s.clave)}>
@@ -86,7 +88,7 @@ export default function Tutorias() {
             contentContainerStyle={styles.lista}
             stickySectionHeadersEnabled={false}
             ItemSeparatorComponent={() => <View style={{ height: 12 }} />}
-            refreshControl={<RefreshControl refreshing={activa.refrescando} onRefresh={activa.refrescar} colors={[colores.azul]} />}
+            refreshControl={<RefreshControl refreshing={activa.refrescando} onRefresh={activa.refrescar} colors={[colores.primario]} />}
             renderSectionHeader={({ section }) => <Text style={styles.encabezado}>{section.title}</Text>}
             renderItem={({ item }) => (
               <TarjetaTutoria
@@ -103,7 +105,7 @@ export default function Tutorias() {
             keyExtractor={(item) => String(item.id_sol)}
             contentContainerStyle={styles.lista}
             ItemSeparatorComponent={() => <View style={{ height: 12 }} />}
-            refreshControl={<RefreshControl refreshing={activa.refrescando} onRefresh={activa.refrescar} colors={[colores.azul]} />}
+            refreshControl={<RefreshControl refreshing={activa.refrescando} onRefresh={activa.refrescar} colors={[colores.primario]} />}
             renderItem={({ item }) => <TarjetaSolicitud solicitud={item} />}
           />
         )}
@@ -113,12 +115,12 @@ export default function Tutorias() {
 }
 
 const styles = StyleSheet.create({
-  pantalla: { flex: 1, backgroundColor: colores.paper },
-  segmentos: { flexDirection: 'row', margin: 16, marginBottom: 4, backgroundColor: colores.linea, borderRadius: 12, padding: 4 },
-  segmento: { flex: 1, paddingVertical: 10, borderRadius: 9, alignItems: 'center' },
-  segmentoActivo: { backgroundColor: colores.blanco },
-  segmentoTexto: { color: colores.ink, opacity: 0.6, fontWeight: '600' },
-  segmentoTextoActivo: { color: colores.azul, opacity: 1 },
-  lista: { padding: 16 },
-  encabezado: { color: colores.celeste, fontSize: 12, fontWeight: '700', letterSpacing: 1, textTransform: 'uppercase', marginTop: 8, marginBottom: 10 },
+  pantalla: { flex: 1, backgroundColor: colores.fondo },
+  segmentos: { flexDirection: 'row', marginHorizontal: 20, borderBottomWidth: 1, borderBottomColor: colores.linea },
+  segmento: { flex: 1, paddingVertical: 12, alignItems: 'center', borderBottomWidth: 3, borderBottomColor: 'transparent', marginBottom: -1 },
+  segmentoActivo: { borderBottomColor: colores.primario },
+  segmentoTexto: { color: colores.texto, opacity: 0.55, fontWeight: '700' },
+  segmentoTextoActivo: { color: colores.primario, opacity: 1 },
+  lista: { padding: 16, paddingBottom: 110 },
+  encabezado: { color: colores.acento, fontSize: 12, fontWeight: '700', letterSpacing: 1, textTransform: 'uppercase', marginTop: 8, marginBottom: 10 },
 });

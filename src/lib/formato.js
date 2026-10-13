@@ -117,3 +117,31 @@ export function fechaEtiqueta(fechaISO) {
 export function primerDiaHabil() {
   return diasHabiles(1)[0].iso;
 }
+
+const CLAVES_DIA = ['LUNES', 'MARTES', 'MIERCOLES', 'JUEVES', 'VIERNES'];
+const NOMBRES_DIA = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes'];
+
+// Semana de lunes a viernes (en hora local) desplazada `desplazamiento` semanas desde hoy.
+// Devuelve { dias: [{ iso, clave, abrev, nombre, numero }], rango: '05 oct – 09 oct 2026' }.
+export function semanaConDesplazamiento(desplazamiento = 0) {
+  const base = new Date();
+  const diaSemana = base.getDay() === 0 ? 7 : base.getDay(); // lunes = 1 ... domingo = 7
+  // Sábado y domingo se muestran como parte de la semana que viene.
+  const retroceso = diaSemana > 5 ? -(8 - diaSemana) : diaSemana - 1;
+  const lunes = new Date(base.getFullYear(), base.getMonth(), base.getDate() - retroceso + desplazamiento * 7);
+  const dias = CLAVES_DIA.map((clave, i) => {
+    const d = new Date(lunes.getFullYear(), lunes.getMonth(), lunes.getDate() + i);
+    return {
+      iso: `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`,
+      clave,
+      abrev: NOMBRES_DIA[i].slice(0, 3).toUpperCase(),
+      nombre: NOMBRES_DIA[i],
+      numero: pad(d.getDate()),
+    };
+  });
+  const ini = dias[0];
+  const fin = dias[4];
+  const mes = (iso) => MESES[Number(iso.slice(5, 7)) - 1];
+  const rango = `${ini.numero} ${mes(ini.iso)} – ${fin.numero} ${mes(fin.iso)} ${fin.iso.slice(0, 4)}`;
+  return { dias, rango };
+}

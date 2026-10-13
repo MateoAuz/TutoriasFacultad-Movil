@@ -1,6 +1,7 @@
 import { useCallback, useState } from 'react';
 import { FlatList, Pressable, RefreshControl, StyleSheet, Text, View } from 'react-native';
 import { router } from 'expo-router';
+import EncabezadoPantalla from '../../components/EncabezadoPantalla';
 import EstadoCarga from '../../components/EstadoCarga';
 import { useNotificaciones } from '../../context/NotificacionesContext';
 import { tiempoRelativo } from '../../lib/formato';
@@ -37,6 +38,7 @@ export default function Notificaciones() {
 
   return (
     <View style={styles.pantalla}>
+      <EncabezadoPantalla titulo="Avisos" subtitulo={noLeidas > 0 ? `${noLeidas} sin leer` : 'Estás al día'} />
       {noLeidas > 0 ? (
         <Pressable style={styles.marcarTodas} onPress={marcarTodasLeidas}>
           <Text style={styles.marcarTodasTexto}>Marcar todas como leídas ({noLeidas})</Text>
@@ -55,7 +57,7 @@ export default function Notificaciones() {
           keyExtractor={(n) => String(n.id_not)}
           contentContainerStyle={styles.lista}
           ItemSeparatorComponent={() => <View style={{ height: 10 }} />}
-          refreshControl={<RefreshControl refreshing={refrescando} onRefresh={refrescar} colors={[colores.azul]} />}
+          refreshControl={<RefreshControl refreshing={refrescando} onRefresh={refrescar} colors={[colores.primario]} />}
           renderItem={({ item }) => (
             <Pressable style={({ pressed }) => [styles.tarjeta, !item.leida && styles.tarjetaNueva, pressed && { opacity: 0.85 }]} onPress={() => abrir(item)}>
               <View style={styles.cabecera}>
@@ -75,17 +77,17 @@ export default function Notificaciones() {
 }
 
 const styles = StyleSheet.create({
-  pantalla: { flex: 1, backgroundColor: colores.paper },
+  pantalla: { flex: 1, backgroundColor: colores.fondo },
   marcarTodas: { alignSelf: 'flex-end', paddingHorizontal: 16, paddingTop: 12 },
-  marcarTodasTexto: { color: colores.azul, fontWeight: '700' },
-  lista: { padding: 16 },
+  marcarTodasTexto: { color: colores.primario, fontWeight: '700' },
+  lista: { padding: 16, paddingBottom: 110 },
   tarjeta: { backgroundColor: colores.blanco, borderRadius: 12, borderWidth: 1, borderColor: colores.linea, padding: 14, gap: 6 },
-  tarjetaNueva: { borderColor: colores.azulClaro, backgroundColor: '#F4F9FE' },
+  tarjetaNueva: { borderColor: colores.primarioClaro, backgroundColor: '#EEF3F9' },
   cabecera: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  etiqueta: { color: colores.celeste, fontSize: 11, fontWeight: '700', letterSpacing: 1, textTransform: 'uppercase' },
+  etiqueta: { color: colores.acento, fontSize: 11, fontWeight: '700', letterSpacing: 1, textTransform: 'uppercase' },
   derecha: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  tiempo: { color: colores.ink, opacity: 0.5, fontSize: 12 },
-  punto: { width: 8, height: 8, borderRadius: 4, backgroundColor: colores.azulClaro },
-  mensaje: { color: colores.ink, opacity: 0.8, fontSize: 14, lineHeight: 20 },
+  tiempo: { color: colores.texto, opacity: 0.5, fontSize: 12 },
+  punto: { width: 8, height: 8, borderRadius: 4, backgroundColor: colores.primarioClaro },
+  mensaje: { color: colores.texto, opacity: 0.8, fontSize: 14, lineHeight: 20 },
   mensajeNuevo: { opacity: 1, fontWeight: '600' },
 });

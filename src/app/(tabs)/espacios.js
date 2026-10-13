@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { FlatList, Pressable, RefreshControl, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Feather } from '@expo/vector-icons';
 import { router } from 'expo-router';
+import EncabezadoPantalla from '../../components/EncabezadoPantalla';
 import EstadoCarga from '../../components/EstadoCarga';
 import SelectorFecha from '../../components/SelectorFecha';
 import SelectorFranja from '../../components/SelectorFranja';
@@ -153,12 +155,13 @@ export default function Espacios() {
 
   return (
     <View style={styles.pantalla}>
+      <EncabezadoPantalla titulo="Espacios" subtitulo="Disponibilidad de aulas y laboratorios" />
       <View style={styles.filtros}>
         <View style={styles.buscador}>
           <TextInput
             style={styles.buscadorInput}
             placeholder="Buscar aula o laboratorio"
-            placeholderTextColor="#7A8CA0"
+            placeholderTextColor="#8A96A8"
             value={busqueda}
             onChangeText={setBusqueda}
             autoCorrect={false}
@@ -171,32 +174,31 @@ export default function Espacios() {
           ) : null}
         </View>
         <View>
-          <Text style={styles.filaTitulo}>Día</Text>
+          <Text style={styles.filaTitulo}>Cuándo</Text>
           <View style={styles.horario}>
             <Pressable style={[styles.selectorHora, styles.selectorHoraActivo]} onPress={() => setCalendarioAbierto(true)}>
+              <Feather name="calendar" size={15} color={colores.blanco} />
               <Text style={[styles.selectorHoraTexto, styles.chipTextoActivo]}>{fechaEtiqueta(fecha)}</Text>
             </Pressable>
-            {hoyEsHabil && !esHoy ? (
-              <Pressable style={styles.limpiar} onPress={() => setFecha(fechaDeHoy())}>
-                <Text style={styles.limpiarTexto}>Volver a hoy · {fechaEtiqueta(fechaDeHoy())}</Text>
-              </Pressable>
-            ) : null}
-          </View>
-        </View>
-        <View>
-          <Text style={styles.filaTitulo}>Horario</Text>
-          <View style={styles.horario}>
             <Pressable style={[styles.selectorHora, conFranja && styles.selectorHoraActivo]} onPress={() => setSelectorAbierto(true)}>
-              <Text style={[styles.selectorHoraTexto, conFranja && styles.chipTextoActivo]}>
-                {conFranja ? `${horaIni} – ${horaFin}` : 'Todo el día · elegir horario'}
-              </Text>
+              <Feather name="clock" size={15} color={conFranja ? colores.blanco : colores.primario} />
+              <Text style={[styles.selectorHoraTexto, conFranja && styles.chipTextoActivo]}>{conFranja ? `${horaIni} – ${horaFin}` : 'Todo el día'}</Text>
             </Pressable>
-            {conFranja ? (
-              <Pressable style={styles.limpiar} onPress={() => setFranja(null)}>
-                <Text style={styles.limpiarTexto}>Todo el día</Text>
-              </Pressable>
-            ) : null}
           </View>
+          {(hoyEsHabil && !esHoy) || conFranja ? (
+            <View style={styles.enlaces}>
+              {hoyEsHabil && !esHoy ? (
+                <Pressable onPress={() => setFecha(fechaDeHoy())} hitSlop={6}>
+                  <Text style={styles.limpiarTexto}>Volver a hoy · {fechaEtiqueta(fechaDeHoy())}</Text>
+                </Pressable>
+              ) : null}
+              {conFranja ? (
+                <Pressable onPress={() => setFranja(null)} hitSlop={6}>
+                  <Text style={styles.limpiarTexto}>Quitar horario</Text>
+                </Pressable>
+              ) : null}
+            </View>
+          ) : null}
         </View>
         <View>
           <Text style={styles.filaTitulo}>Filtrar</Text>
@@ -231,7 +233,7 @@ export default function Espacios() {
           contentContainerStyle={styles.lista}
           keyboardShouldPersistTaps="handled"
           ItemSeparatorComponent={() => <View style={{ height: 10 }} />}
-          refreshControl={<RefreshControl refreshing={refrescando} onRefresh={refrescar} colors={[colores.azul]} />}
+          refreshControl={<RefreshControl refreshing={refrescando} onRefresh={refrescar} colors={[colores.primario]} />}
           ListHeaderComponent={
             <View style={{ marginBottom: 10 }}>
               <Text style={styles.encabezado}>
@@ -330,8 +332,8 @@ function TarjetaEspacio({ espacio, conFranja, enMomento, textoMomento, minutoAct
     estado = `${nActividades} ${nActividades === 1 ? 'actividad' : 'actividades'}`;
     tono = 'info';
   }
-  const colorTexto = { si: colores.exito, no: colores.peligro, info: colores.celeste }[tono];
-  const colorFondo = { si: '#1B7A5B26', no: '#B3261E1A', info: '#2378AD26' }[tono];
+  const colorTexto = { si: colores.exito, no: colores.peligro, info: colores.info }[tono];
+  const colorFondo = { si: '#2E7D5B26', no: '#B4412F1A', info: '#3E7CB126' }[tono];
 
   return (
     <View style={styles.tarjeta}>
@@ -367,36 +369,37 @@ function TarjetaEspacio({ espacio, conFranja, enMomento, textoMomento, minutoAct
 }
 
 const styles = StyleSheet.create({
-  pantalla: { flex: 1, backgroundColor: colores.paper },
+  pantalla: { flex: 1, backgroundColor: colores.fondo },
   filtros: { backgroundColor: colores.blanco, borderBottomWidth: 1, borderBottomColor: colores.linea, paddingVertical: 8, gap: 2 },
-  filaTitulo: { color: colores.celeste, fontSize: 11, fontWeight: '700', letterSpacing: 1, textTransform: 'uppercase', marginLeft: 16, marginTop: 6 },
-  buscador: { flexDirection: 'row', alignItems: 'center', marginHorizontal: 16, marginTop: 4, marginBottom: 2, backgroundColor: colores.paper, borderRadius: 10, borderWidth: 1, borderColor: colores.linea },
-  buscadorInput: { flex: 1, paddingHorizontal: 14, paddingVertical: 10, fontSize: 14, color: colores.ink },
+  filaTitulo: { color: colores.texto, opacity: 0.6, fontSize: 11, fontWeight: '700', letterSpacing: 1, textTransform: 'uppercase', marginLeft: 16, marginTop: 6 },
+  buscador: { flexDirection: 'row', alignItems: 'center', marginHorizontal: 16, marginTop: 4, marginBottom: 2, backgroundColor: colores.fondo, borderRadius: 12, borderWidth: 1, borderColor: colores.linea },
+  buscadorInput: { flex: 1, paddingHorizontal: 14, paddingVertical: 10, fontSize: 14, color: colores.texto },
   buscadorLimpiar: { paddingHorizontal: 14 },
-  buscadorLimpiarTexto: { color: colores.ink, opacity: 0.5, fontWeight: '700' },
+  buscadorLimpiarTexto: { color: colores.texto, opacity: 0.5, fontWeight: '700' },
   chips: { paddingHorizontal: 16, paddingVertical: 6, gap: 8 },
-  chip: { borderRadius: 999, borderWidth: 1, borderColor: colores.linea, paddingHorizontal: 14, paddingVertical: 7, backgroundColor: colores.paper },
-  chipActivo: { backgroundColor: colores.azul, borderColor: colores.azul },
-  chipTexto: { color: colores.ink, fontWeight: '600', fontSize: 13 },
+  chip: { borderRadius: 6, borderWidth: 1, borderColor: colores.linea, paddingHorizontal: 14, paddingVertical: 7, backgroundColor: colores.fondo },
+  chipActivo: { backgroundColor: colores.primario, borderColor: colores.primario },
+  chipTexto: { color: colores.texto, fontWeight: '600', fontSize: 13 },
   chipTextoActivo: { color: colores.blanco },
   horario: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 16, paddingVertical: 6 },
-  selectorHora: { borderRadius: 999, borderWidth: 1, borderColor: colores.linea, paddingHorizontal: 16, paddingVertical: 9, backgroundColor: colores.paper },
-  selectorHoraActivo: { backgroundColor: colores.azul, borderColor: colores.azul },
-  selectorHoraTexto: { color: colores.ink, fontWeight: '600', fontSize: 13 },
+  selectorHora: { flexDirection: 'row', alignItems: 'center', gap: 8, borderRadius: 6, borderWidth: 1, borderColor: colores.linea, paddingHorizontal: 16, paddingVertical: 9, backgroundColor: colores.fondo },
+  selectorHoraActivo: { backgroundColor: colores.primario, borderColor: colores.primario },
+  selectorHoraTexto: { color: colores.texto, fontWeight: '600', fontSize: 13 },
+  enlaces: { flexDirection: 'row', flexWrap: 'wrap', gap: 16, paddingHorizontal: 16, paddingBottom: 4 },
   limpiar: { paddingVertical: 8, paddingHorizontal: 4 },
-  limpiarTexto: { color: colores.azul, fontWeight: '700', fontSize: 13 },
-  lista: { padding: 16 },
-  encabezado: { color: colores.ink, fontWeight: '700' },
-  subencabezado: { color: colores.celeste, fontWeight: '600', fontSize: 12, marginTop: 2 },
-  tarjeta: { backgroundColor: colores.blanco, borderRadius: 14, borderWidth: 1, borderColor: colores.linea, padding: 14, gap: 6 },
+  limpiarTexto: { color: colores.primario, fontWeight: '700', fontSize: 13 },
+  lista: { padding: 16, paddingBottom: 110 },
+  encabezado: { color: colores.texto, fontWeight: '700' },
+  subencabezado: { color: colores.acento, fontWeight: '600', fontSize: 12, marginTop: 2 },
+  tarjeta: { backgroundColor: colores.blanco, borderRadius: 12, borderWidth: 1, borderColor: colores.linea, padding: 14, gap: 6 },
   tarjetaCabecera: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: 8 },
-  nombre: { color: colores.ink, fontSize: 16, fontWeight: '700', flexShrink: 1 },
-  estado: { borderRadius: 999, paddingHorizontal: 10, paddingVertical: 4 },
+  nombre: { color: colores.texto, fontSize: 16, fontWeight: '700', flexShrink: 1 },
+  estado: { borderRadius: 6, paddingHorizontal: 10, paddingVertical: 4 },
   estadoTexto: { fontSize: 11, fontWeight: '700' },
-  ubicacion: { color: colores.ink, opacity: 0.6, fontSize: 13 },
+  ubicacion: { color: colores.texto, opacity: 0.6, fontSize: 13 },
   ocupaciones: { marginTop: 4, gap: 2 },
-  ocupacion: { color: colores.ink, opacity: 0.6, fontSize: 12, paddingVertical: 2, paddingHorizontal: 6, marginHorizontal: -6 },
-  ocupacionActual: { opacity: 1, fontWeight: '700', backgroundColor: '#2378AD1F', borderRadius: 6, overflow: 'hidden' },
-  boton: { backgroundColor: colores.azul, borderRadius: 10, paddingVertical: 11, alignItems: 'center', marginTop: 8 },
+  ocupacion: { color: colores.texto, opacity: 0.6, fontSize: 12, paddingVertical: 2, paddingHorizontal: 6, marginHorizontal: -6 },
+  ocupacionActual: { opacity: 1, fontWeight: '700', backgroundColor: '#3E7CB11F', borderRadius: 6, overflow: 'hidden' },
+  boton: { backgroundColor: colores.primario, borderRadius: 12, paddingVertical: 11, alignItems: 'center', marginTop: 8 },
   botonTexto: { color: colores.blanco, fontWeight: '700' },
 });

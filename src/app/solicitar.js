@@ -2,7 +2,8 @@ import { useState } from 'react';
 import { ActivityIndicator, Alert, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 import EstadoCarga from '../components/EstadoCarga';
-import { matriculasApi, solicitudesApi } from '../api/solicitudes';
+import { matriculasApi } from '../api/matriculas';
+import { solicitudesApi } from '../api/solicitudes';
 import { mensajeDeError } from '../api/client';
 import { useRecurso } from '../hooks/useRecurso';
 import { formatearFecha } from '../lib/formato';
@@ -74,7 +75,7 @@ export default function SolicitarTutoria() {
         <TextInput
           style={styles.input}
           placeholder="Ej. Dudas del proyecto final"
-          placeholderTextColor="#7A8CA0"
+          placeholderTextColor="#8A96A8"
           value={tema}
           onChangeText={setTema}
           maxLength={200}
@@ -95,18 +96,18 @@ export default function SolicitarTutoria() {
 }
 
 const styles = StyleSheet.create({
-  pantalla: { flex: 1, backgroundColor: colores.paper },
+  pantalla: { flex: 1, backgroundColor: colores.fondo },
   contenido: { padding: 16, gap: 10 },
-  resumen: { backgroundColor: colores.blanco, borderRadius: 14, borderWidth: 1, borderColor: colores.linea, padding: 16, gap: 2 },
-  etiqueta: { color: colores.celeste, fontSize: 11, fontWeight: '700', letterSpacing: 1, textTransform: 'uppercase', marginTop: 6 },
-  valor: { color: colores.ink, fontSize: 16, fontWeight: '600' },
-  seccion: { color: colores.ink, fontSize: 16, fontWeight: '700', marginTop: 10 },
+  resumen: { backgroundColor: colores.blanco, borderRadius: 12, borderWidth: 1, borderColor: colores.linea, padding: 16, gap: 2 },
+  etiqueta: { color: colores.acento, fontSize: 11, fontWeight: '700', letterSpacing: 1, textTransform: 'uppercase', marginTop: 6 },
+  valor: { color: colores.texto, fontSize: 16, fontWeight: '600' },
+  seccion: { color: colores.texto, fontSize: 16, fontWeight: '700', marginTop: 10 },
   curso: { backgroundColor: colores.blanco, borderRadius: 12, borderWidth: 2, borderColor: colores.linea, padding: 14 },
-  cursoActivo: { borderColor: colores.azul, backgroundColor: '#F4F9FE' },
-  cursoNombre: { color: colores.ink, fontWeight: '700' },
-  cursoDocente: { color: colores.ink, opacity: 0.6, fontSize: 13, marginTop: 2 },
-  input: { backgroundColor: colores.blanco, borderWidth: 1, borderColor: colores.linea, borderRadius: 10, paddingHorizontal: 14, paddingVertical: 12, fontSize: 15, color: colores.ink },
+  cursoActivo: { borderColor: colores.primario, backgroundColor: '#EEF3F9' },
+  cursoNombre: { color: colores.texto, fontWeight: '700' },
+  cursoDocente: { color: colores.texto, opacity: 0.6, fontSize: 13, marginTop: 2 },
+  input: { backgroundColor: colores.blanco, borderWidth: 1, borderColor: colores.linea, borderRadius: 12, paddingHorizontal: 14, paddingVertical: 12, fontSize: 15, color: colores.texto },
   error: { color: colores.peligro, fontSize: 13 },
-  boton: { backgroundColor: colores.azul, borderRadius: 10, paddingVertical: 14, alignItems: 'center', marginTop: 8 },
+  boton: { backgroundColor: colores.primario, borderRadius: 12, paddingVertical: 14, alignItems: 'center', marginTop: 8 },
   botonTexto: { color: colores.blanco, fontWeight: '700', fontSize: 15 },
 });

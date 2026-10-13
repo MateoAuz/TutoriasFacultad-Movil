@@ -12,7 +12,7 @@ export default function PantallaVacia({ titulo, detalle }) {
 }
 
 const styles = StyleSheet.create({
-  pantalla: { flex: 1, backgroundColor: colores.paper, alignItems: 'center', justifyContent: 'center', padding: 24 },
-  titulo: { color: colores.ink, fontSize: 20, fontWeight: '700', marginBottom: 6 },
-  detalle: { color: colores.ink, opacity: 0.6, textAlign: 'center' },
+  pantalla: { flex: 1, backgroundColor: colores.fondo, alignItems: 'center', justifyContent: 'center', padding: 24 },
+  titulo: { color: colores.texto, fontSize: 20, fontWeight: '700', marginBottom: 6 },
+  detalle: { color: colores.texto, opacity: 0.6, textAlign: 'center' },
 });

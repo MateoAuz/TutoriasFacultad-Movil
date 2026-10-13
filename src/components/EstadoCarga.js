@@ -6,7 +6,7 @@ export default function EstadoCarga({ cargando, error, vacio, mensajeVacio, onRe
   if (cargando) {
     return (
       <View style={styles.centro}>
-        <ActivityIndicator size="large" color={colores.azul} />
+        <ActivityIndicator size="large" color={colores.primario} />
       </View>
     );
   }
@@ -35,7 +35,7 @@ export default function EstadoCarga({ cargando, error, vacio, mensajeVacio, onRe
 const styles = StyleSheet.create({
   centro: { alignItems: 'center', justifyContent: 'center', padding: 32, gap: 12 },
   error: { color: colores.peligro, textAlign: 'center' },
-  vacio: { color: colores.ink, opacity: 0.6, textAlign: 'center' },
-  boton: { backgroundColor: colores.azul, borderRadius: 10, paddingVertical: 10, paddingHorizontal: 20 },
+  vacio: { color: colores.texto, opacity: 0.6, textAlign: 'center' },
+  boton: { backgroundColor: colores.primario, borderRadius: 12, paddingVertical: 10, paddingHorizontal: 20 },
   botonTexto: { color: colores.blanco, fontWeight: '700' },
 });

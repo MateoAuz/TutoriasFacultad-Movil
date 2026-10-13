@@ -1,6 +1,7 @@
 import { useMemo } from 'react';
 import { Pressable, RefreshControl, SectionList, StyleSheet, Text, View } from 'react-native';
 import { router } from 'expo-router';
+import EncabezadoPantalla from '../../components/EncabezadoPantalla';
 import EstadoCarga from '../../components/EstadoCarga';
 import { tutoriasApi } from '../../api/tutorias';
 import { useRecurso } from '../../hooks/useRecurso';
@@ -36,6 +37,7 @@ export default function Historial() {
 
   return (
     <View style={styles.pantalla}>
+      <EncabezadoPantalla titulo="Historial" subtitulo="Tus asistencias registradas" atras />
       <EstadoCarga
         cargando={cargando}
         error={mensajeError}
@@ -48,7 +50,7 @@ export default function Historial() {
           keyExtractor={(t) => String(t.id_rev)}
           contentContainerStyle={styles.lista}
           stickySectionHeadersEnabled={false}
-          refreshControl={<RefreshControl refreshing={refrescando} onRefresh={refrescar} colors={[colores.azul]} />}
+          refreshControl={<RefreshControl refreshing={refrescando} onRefresh={refrescar} colors={[colores.primario]} />}
           ListHeaderComponent={
             <View style={styles.resumen}>
               <Dato valor={total} etiqueta="Asistencias" />
@@ -89,15 +91,15 @@ function Dato({ valor, etiqueta }) {
 }
 
 const styles = StyleSheet.create({
-  pantalla: { flex: 1, backgroundColor: colores.paper },
-  lista: { padding: 16 },
+  pantalla: { flex: 1, backgroundColor: colores.fondo },
+  lista: { padding: 16, paddingBottom: 110 },
   resumen: { flexDirection: 'row', gap: 10, marginBottom: 8 },
   dato: { flex: 1, backgroundColor: colores.blanco, borderRadius: 12, borderWidth: 1, borderColor: colores.linea, paddingVertical: 14, alignItems: 'center' },
-  datoValor: { color: colores.azul, fontSize: 26, fontWeight: '800' },
-  datoEtiqueta: { color: colores.ink, opacity: 0.6, fontSize: 12 },
-  mes: { color: colores.celeste, fontSize: 12, fontWeight: '700', letterSpacing: 1, textTransform: 'uppercase', marginTop: 16, marginBottom: 8 },
+  datoValor: { color: colores.primario, fontSize: 26, fontWeight: '700' },
+  datoEtiqueta: { color: colores.texto, opacity: 0.6, fontSize: 12 },
+  mes: { color: colores.acento, fontSize: 12, fontWeight: '700', letterSpacing: 1, textTransform: 'uppercase', marginTop: 16, marginBottom: 8 },
   fila: { backgroundColor: colores.blanco, borderRadius: 12, borderWidth: 1, borderColor: colores.linea, padding: 14 },
-  curso: { color: colores.ink, fontWeight: '700', fontSize: 15 },
-  fecha: { color: colores.azul, fontSize: 13, fontWeight: '600' },
-  registro: { color: colores.ink, opacity: 0.55, fontSize: 12 },
+  curso: { color: colores.texto, fontWeight: '700', fontSize: 15 },
+  fecha: { color: colores.primario, fontSize: 13, fontWeight: '600' },
+  registro: { color: colores.texto, opacity: 0.55, fontSize: 12 },
 });

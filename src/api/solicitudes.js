@@ -24,8 +24,3 @@ export const solicitudesApi = {
       }))
     ),
 };
-
-export const matriculasApi = {
-  // GET /api/matriculas: para un estudiante, solo las suyas
-  mias: () => api.get('/matriculas').then((r) => r.data),
-};
