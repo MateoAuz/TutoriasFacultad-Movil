@@ -42,3 +42,6 @@ yarn-error.*
 
 # variables locales (IP del backend)
 .env
+
+# configuración local de herramientas
+.claude/
